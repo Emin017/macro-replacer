@@ -146,6 +146,13 @@ def gen_verilog(module, target_module_name, macro_name, macro_ports=None):
                     # Find outer clk
                     clks = [x for x in outer_inputs if "clk" in x.lower()]
                     if clks: candidate = clks[0] # Pick first found
+                elif "bwen" in m_name.lower():
+                    # Find outer bwen
+                    bwens = [x for x in outer_inputs if "bwen" in x.lower()]
+                    if not bwens:
+                        print("[DEBUG] No bwen found")
+                        # bwens = []
+                    if bwens: candidate = bwens[0] # Pick first found
                 elif "wen" in m_name.lower():
                     # Write Enable heuristic: prefer ports with 'w' and 'en' in name (e.g. W0_en, write_en)
                     # over generic 'en' matching (which might match read_en or chip_en)
