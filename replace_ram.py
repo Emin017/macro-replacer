@@ -4,7 +4,6 @@ import os
 import argparse
 
 # Defaults
-# Defaults
 VERILOG_FILE = "ysyxSoCFull.v"
 AST_FILE = "ysyxSoCFull.ast.json"
 TARGET_MODULE = "ram_2x3"
@@ -148,8 +147,11 @@ def gen_verilog(module, target_module_name, macro_name, macro_ports=None):
                     clks = [x for x in outer_inputs if "clk" in x.lower()]
                     if clks: candidate = clks[0] # Pick first found
                 elif "wen" in m_name.lower():
-                    # Write Enable
-                    wens = [x for x in outer_inputs if "wen" in x.lower() or "en" in x.lower()]
+                    # Write Enable heuristic: prefer ports with 'w' and 'en' in name (e.g. W0_en, write_en)
+                    # over generic 'en' matching (which might match read_en or chip_en)
+                    wens = [x for x in outer_inputs if "w" in x.lower() and "en" in x.lower()]
+                    if not wens:
+                        wens = [x for x in outer_inputs if "en" in x.lower()]
                     if wens: candidate = wens[0]
                 elif "addr" in m_name.lower() or m_name == "A":
                     # Address
