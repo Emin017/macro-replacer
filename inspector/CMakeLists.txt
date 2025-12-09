@@ -6,6 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(slang REQUIRED)
 
-add_executable(inspector main.cpp)
+add_executable(inspector src/main.cpp)
 
 target_link_libraries(inspector PRIVATE slang::slang)
