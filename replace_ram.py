@@ -134,14 +134,6 @@ def gen_verilog(module, target_module_name, macro_name, macro_ports=None):
             m_dir = mp.get("direction", "").lower()
             m_type = mp.get("type", "logic")
             
-    # 2. Define Instance Connections with Heuristics
-    connect_lines = []
-    if macro_ports:
-        for mp in macro_ports:
-            m_name = mp.get("name")
-            m_dir = mp.get("direction", "").lower()
-            m_type = mp.get("type", "logic")
-            
             # Simple Heuristic Matching
             candidate = ""
             if "out" in m_dir:
@@ -168,7 +160,7 @@ def gen_verilog(module, target_module_name, macro_name, macro_ports=None):
                     datas = [x for x in outer_inputs if "data" in x.lower()]
                     if datas: candidate = datas[0]
 
-            connect_lines.append(f".{m_name}({candidate}) /* {m_dir.capitalize()} {m_type} */")
+            connect_lines.append(f".{m_name}({candidate}), // {m_dir.capitalize()} {m_type}")
     else:
         # Fallback if no macro ports found
         pass
