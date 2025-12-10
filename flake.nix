@@ -30,15 +30,24 @@
           system,
           ...
         }:
+        let
+          overlay = import ./nix/overlay.nix;
+        in
         {
+          _module.args.pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = [
+              overlay
+            ];
+          };
+
           imports = [
             ./nix
           ];
-          packages = pkgs.callPackage ./nix/pkgs { };
-          formatter = pkgs.nixfmt-rfc-style;
-          # checks = {
-          #   formatting = treefmtEval.config.build.check self;
-          # };
+          packages = {
+            default = pkgs.macroReplacer;
+            inspector = pkgs.slangInspector;
+          };
         };
     };
 }
