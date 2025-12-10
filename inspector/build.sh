@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SLANG_BUILD_DIR=$(pwd)/slang/build/cmake
 
