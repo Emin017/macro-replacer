@@ -14,6 +14,8 @@ To install Nix, follow the instructions at [nixos.org](https://nixos.org/downloa
 nix run github:Emin017/macro-replacer# -- --help
 
 # or clone repo and run locally
+git clone https://github.com/Emin017/macro-replacer.git
+cd macro-replacer
 nix run .# -- --help
 ```
 
