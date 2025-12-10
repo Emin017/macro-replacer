@@ -41,11 +41,6 @@ struct PortInfo {
     std::string type;
 };
 
-struct DefinitionInfo {
-    std::string name;
-    std::vector<PortInfo> ports;
-};
-
 struct ConnectionInfo {
     std::string portName;
     std::string signalType;
@@ -59,6 +54,14 @@ struct InstanceInfo {
     std::string fullPath;
     std::string definitionName;
     std::vector<ConnectionInfo> connections;
+    unsigned int startOffset = 0;
+    unsigned int endOffset = 0;
+};
+
+struct DefinitionInfo {
+    std::string name;
+    std::vector<PortInfo> ports;
+    std::vector<InstanceInfo> instances;
 };
 
 struct InspectorResult {
@@ -68,10 +71,11 @@ struct InspectorResult {
 
 // JSON Serialization
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PortInfo, name, direction, type)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DefinitionInfo, name, ports)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ConnectionInfo, portName, signalType, width, direction, isConnected)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ConnectionInfo, portName, signalType, width, direction,
+                                   isConnected)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(InstanceInfo, instanceName, fullPath, definitionName,
-                                   connections)
+                                   connections, startOffset, endOffset)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DefinitionInfo, name, ports, instances)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(InspectorResult, definition, instances)
 
 // Help function: Convert ArgumentDirection to string
@@ -185,6 +189,95 @@ void collectModuleInAST(Compilation& compilation, const std::string& targetName,
                     portInfo.type = port.getType().toString();
                     defInfo.ports.push_back(portInfo);
                 }
+                else if (member.kind == SymbolKind::UninstantiatedDef) {
+                    const auto& uninst = member.as<UninstantiatedDefSymbol>();
+                    InstanceInfo subInst;
+                    subInst.instanceName = std::string(uninst.name);
+                    subInst.definitionName = std::string(uninst.definitionName);
+                    subInst.fullPath = uninst.getHierarchicalPath();
+
+                    const SyntaxNode* syntax = uninst.getSyntax();
+                    if (syntax) {
+                        SourceRange range = syntax->sourceRange();
+                        subInst.startOffset = range.start().offset();
+                        subInst.endOffset = range.end().offset();
+                    }
+
+                    auto portNames = uninst.getPortNames();
+                    auto portExprs = uninst.getPortConnections();
+
+                    for (size_t i = 0; i < portExprs.size(); i++) {
+                        ConnectionInfo connInfo;
+                        if (i < portNames.size() && !portNames[i].empty()) {
+                            connInfo.portName = std::string(portNames[i]);
+                        }
+                        else {
+                            connInfo.portName = "[Positional #" + std::to_string(i) + "]";
+                        }
+
+                        if (portExprs[i]) {
+                            const Expression* expr = nullptr;
+                            if (portExprs[i]->kind == AssertionExprKind::Simple) {
+                                expr = &portExprs[i]->as<SimpleAssertionExpr>().expr;
+                            }
+
+                            if (expr) {
+                                const Type& type = *expr->type;
+                                connInfo.signalType = type.toString();
+                                if (expr->syntax) {
+                                    connInfo.signalType = expr->syntax->toString();
+                                }
+                                connInfo.isConnected = true;
+                            }
+                            else {
+                                connInfo.signalType =
+                                    "Complex/Unresolved"; // Handle Sequence/Property exprs if
+                                                          // needed
+                                connInfo.isConnected = true;
+                            }
+                        }
+                        else {
+                            connInfo.isConnected = false;
+                        }
+                        subInst.connections.push_back(connInfo);
+                    }
+                    defInfo.instances.push_back(subInst);
+                }
+                else if (member.kind == SymbolKind::Instance) {
+                    const auto& inst = member.as<InstanceSymbol>();
+                    InstanceInfo subInst;
+                    subInst.instanceName = std::string(inst.name);
+                    subInst.definitionName = std::string(inst.getDefinition().name);
+                    subInst.fullPath = inst.getHierarchicalPath();
+
+                    const SyntaxNode* syntax = inst.getSyntax();
+                    if (syntax) {
+                        SourceRange range = syntax->sourceRange();
+                        subInst.startOffset = range.start().offset();
+                        subInst.endOffset = range.end().offset();
+                    }
+
+                    for (auto conn : inst.getPortConnections()) {
+                        ConnectionInfo connInfo;
+                        connInfo.portName = std::string(conn->port.name);
+
+                        const Expression* expr = conn->getExpression();
+                        if (expr) {
+                            if (expr->syntax) {
+                                connInfo.signalType = expr->syntax->toString();
+                            }
+                            else {
+                                connInfo.signalType = expr->type->toString();
+                            }
+                            connInfo.isConnected = true;
+                        }
+                        else {
+                            connInfo.isConnected = false;
+                        }
+                        subInst.connections.push_back(connInfo);
+                    }
+                    defInfo.instances.push_back(subInst);
+                }
             }
             result.definition = defInfo;
             return; // Found definition
@@ -220,7 +313,8 @@ void collectInstantiationsInAST(const Scope& scope, const std::string& targetNam
                     std::string dirStr = "Unknown";
                     if (conn->port.kind == SymbolKind::Port) {
                         dirStr = directionToString(conn->port.as<PortSymbol>().direction);
-                    } else if (conn->port.kind == SymbolKind::MultiPort) {
+                    }
+                    else if (conn->port.kind == SymbolKind::MultiPort) {
                         dirStr = directionToString(conn->port.as<MultiPortSymbol>().direction);
                     }
 
