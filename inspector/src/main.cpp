@@ -50,6 +50,7 @@ struct ConnectionInfo {
     std::string portName;
     std::string signalType;
     std::string width;
+    std::string direction;
     bool isConnected;
 };
 
@@ -68,7 +69,7 @@ struct InspectorResult {
 // JSON Serialization
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PortInfo, name, direction, type)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DefinitionInfo, name, ports)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ConnectionInfo, portName, signalType, width, isConnected)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ConnectionInfo, portName, signalType, width, direction, isConnected)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(InstanceInfo, instanceName, fullPath, definitionName,
                                    connections)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(InspectorResult, definition, instances)
@@ -216,16 +217,25 @@ void collectInstantiationsInAST(const Scope& scope, const std::string& targetNam
                     ConnectionInfo connInfo;
                     connInfo.portName = std::string(conn->port.name);
 
+                    std::string dirStr = "Unknown";
+                    if (conn->port.kind == SymbolKind::Port) {
+                        dirStr = directionToString(conn->port.as<PortSymbol>().direction);
+                    } else if (conn->port.kind == SymbolKind::MultiPort) {
+                        dirStr = directionToString(conn->port.as<MultiPortSymbol>().direction);
+                    }
+
                     const Expression* expr = conn->getExpression();
                     if (expr) {
                         const Type& type = *expr->type;
                         connInfo.signalType = type.toString();
                         connInfo.width = std::to_string(type.getBitWidth());
+                        connInfo.direction = dirStr;
                         connInfo.isConnected = true;
                     }
                     else {
                         connInfo.signalType = "Unknown";
                         connInfo.width = "0"; // Or unknown
+                        connInfo.direction = dirStr;
                         connInfo.isConnected = false;
                     }
                     instInfo.connections.push_back(connInfo);
@@ -282,6 +292,18 @@ void collectInstantiationsInAST(const Scope& scope, const std::string& targetNam
                         connInfo.width = "0";
                         connInfo.isConnected = false;
                     }
+
+                    connInfo.direction = "Unknown";
+                    // Try to look up direction from definition if available
+                    if (result.definition) {
+                        for (const auto& p : result.definition->ports) {
+                            if (p.name == connInfo.portName) {
+                                connInfo.direction = p.direction;
+                                break;
+                            }
+                        }
+                    }
+
                     instInfo.connections.push_back(connInfo);
                 }
                 result.instances.push_back(instInfo);
@@ -319,7 +341,7 @@ void printTextOutput(const InspectorResult& result) {
             std::cout << "Source: AST Connection Analysis" << '\n';
 
             for (const auto& conn : inst.connections) {
-                std::cout << "  Port: " << conn.portName;
+                std::cout << "  Port: " << conn.portName << " | Dir: " << conn.direction;
                 if (conn.isConnected) {
                     std::cout << " | Connected Signal Type: " << conn.signalType
                               << " | Width: " << conn.width;
