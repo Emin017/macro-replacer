@@ -10,3 +10,5 @@ find_package(nlohmann_json REQUIRED)
 add_executable(inspector src/main.cpp)
 
 target_link_libraries(inspector PRIVATE slang::slang nlohmann_json::nlohmann_json)
+
+install(TARGETS inspector RUNTIME DESTINATION bin COMPONENT Runtime)
