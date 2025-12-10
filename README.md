@@ -1,5 +1,7 @@
 # Macro Replacer
 
+![main](https://github.com/Emin017/macro-replacer/actions/workflows/build.yml/badge.svg?branch=main)
+
 A small utility to replace macro/module (including blackbox module) instantiations in Verilog/SystemVerilog source files.
 
 ## Install
