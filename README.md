@@ -5,7 +5,15 @@
 A small utility by using [**SlangPortInspector**](inspector/README.md) to replace macro/module (including blackbox module) instantiations in Verilog/SystemVerilog source files.
 
 ## Install
-```bash
+
+We use Nix for reproducible builds.
+
+To install Nix, follow the instructions at [nixos.org](https://nixos.org/download.html). (Nix is not NixOS)
+
+```shell
+nix run github:Emin017/macro-replacer# -- --help
+
+# or clone repo and run locally
 nix run .# -- --help
 ```
 
@@ -20,7 +28,7 @@ Usage (CLI)
 
 ## Example
 
-```bash
+```shell
 nix run .# -- --verilog test.v \
   --module tech_regfile \
   --old-macro old_macro \
@@ -31,6 +39,6 @@ nix run .# -- --verilog test.v \
 
 Or run directly with Python:
 
-```bash
+```shell
 python3 -m macro_replacer.replacer --verilog test.v --module tech_regfile --old-macro old_macro --new-macro-file test_macro.v --new-macro-name test_macro --out replaced_ram.v
 ```
