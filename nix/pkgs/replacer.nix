@@ -19,4 +19,8 @@ buildPythonApplication {
     substituteInPlace src/macro_replacer/replacer.py \
       --replace-fail 'os.path.join(os.path.dirname(os.path.abspath(__file__)), "inspector/build/inspector")' '"${slangInspector}/bin/inspector"'
   '';
+
+  meta = {
+    mainProgram = "replacer";
+  };
 }
