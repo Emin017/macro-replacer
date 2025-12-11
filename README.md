@@ -44,3 +44,5 @@ Or run directly with Python:
 ```shell
 python3 -m macro_replacer.replacer --verilog test.v --module tech_regfile --old-macro old_macro --new-macro-file test_macro.v --new-macro-name test_macro --out replaced_ram.v
 ```
+
+See [test_cases](tests/integration/test_cases) for more examples.
