@@ -4,9 +4,12 @@ import unittest
 from unittest import mock
 
 # Add src to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src"))
+)
 
 from macro_replacer import replacer
+
 
 class TestIntegration(unittest.TestCase):
     def setUp(self):
@@ -21,10 +24,14 @@ class TestIntegration(unittest.TestCase):
         else:
             # Assuming we are in tests/integration/
             # Inspector is at ../../inspector/build/inspector
-            self.inspector_path = os.path.abspath(os.path.join(self.base_dir, "../../inspector/build/inspector"))
+            self.inspector_path = os.path.abspath(
+                os.path.join(self.base_dir, "../../inspector/build/inspector")
+            )
 
         if not os.path.exists(self.inspector_path):
-            self.skipTest(f"Inspector binary not found at {self.inspector_path}. Please build it first.")
+            self.skipTest(
+                f"Inspector binary not found at {self.inspector_path}. Please build it first."
+            )
 
         # Patch replacer's inspector path
         replacer.INSPECTOR_PATH = self.inspector_path
@@ -40,29 +47,35 @@ class TestIntegration(unittest.TestCase):
         # Prepare args
         argv = [
             "replacer.py",
-            "--verilog", verilog_file,
-            "--module", "top_module",
-            "--old-macro", "OLD_MACRO",
-            "--new-macro-file", new_macro_file,
-            "--new-macro-name", "NEW_MACRO",
-            "--out", self.output_file
+            "--verilog",
+            verilog_file,
+            "--module",
+            "top_module",
+            "--old-macro",
+            "OLD_MACRO",
+            "--new-macro-file",
+            new_macro_file,
+            "--new-macro-name",
+            "NEW_MACRO",
+            "--out",
+            self.output_file,
         ]
 
-        with mock.patch('sys.argv', argv):
+        with mock.patch("sys.argv", argv):
             replacer.main()
-            
+
         self.assertTrue(os.path.exists(self.output_file))
 
-        with open(self.output_file, 'r') as f:
+        with open(self.output_file, "r") as f:
             content = f.read()
 
         print(f"Output:\n{content}")
-        
+
         self.assertIn("NEW_MACRO u_inst", content)
         # Check for expected connections
         # Note: replacer uses padding <10
         self.assertIn(".CLK        (clk)", content)
-        self.assertIn(".WEN        (wen)", content) # Heuristic check: CW -> WEN
+        self.assertIn(".WEN        (wen)", content)  # Heuristic check: CW -> WEN
         self.assertIn(".D          (d)", content)
         self.assertIn(".Q          (q)", content)
 
@@ -78,20 +91,26 @@ class TestIntegration(unittest.TestCase):
 
         argv = [
             "replacer.py",
-            "--verilog", verilog_file,
-            "--module", "top",
-            "--old-macro", "OLD_MACRO",
-            "--new-macro-file", new_macro_file,
-            "--new-macro-name", "NEW_MACRO",
-            "--out", output_file
+            "--verilog",
+            verilog_file,
+            "--module",
+            "top",
+            "--old-macro",
+            "OLD_MACRO",
+            "--new-macro-file",
+            new_macro_file,
+            "--new-macro-name",
+            "NEW_MACRO",
+            "--out",
+            output_file,
         ]
 
-        with mock.patch('sys.argv', argv):
+        with mock.patch("sys.argv", argv):
             replacer.main()
 
         self.assertTrue(os.path.exists(output_file))
 
-        with open(output_file, 'r') as f:
+        with open(output_file, "r") as f:
             content = f.read()
 
         print(f"Output Case 2:\n{content}")
@@ -104,5 +123,6 @@ class TestIntegration(unittest.TestCase):
         if os.path.exists(output_file):
             os.remove(output_file)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
