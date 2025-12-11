@@ -14,9 +14,9 @@ NEW_MACRO_DEF_FILE = (
 )
 NEW_MACRO_NAME = "test_macro"  # Placeholder, should be derived or passed
 
-INSPECTOR_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "inspector/build/inspector"
-)
+# fmt: off
+INSPECTOR_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inspector/build/inspector")
+# fmt: on
 
 
 def run_inspector(verilog_file, module_name):
